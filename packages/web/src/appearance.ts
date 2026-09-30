@@ -118,7 +118,11 @@ function skinOption(value: string, name: string, hint: string, props: SkinOption
     createElement(
       'span',
       { className: 'appearance-option-copy' },
-      createElement('span', { className: 'appearance-option-name' }, name),
+      createElement(
+        'span',
+        { className: 'appearance-option-name', ...(value ? { 'data-locale-exempt': true } : {}) },
+        name,
+      ),
       hint === '' ? null : createElement('span', { className: 'appearance-option-hint' }, hint),
     ),
   )

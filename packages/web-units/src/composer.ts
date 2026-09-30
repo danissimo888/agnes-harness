@@ -353,7 +353,14 @@ export const Composer = forwardRef<ComposerHandle, ComposerProps>(function Compo
             'aria-expanded': false,
             'aria-label': view.model.accessibleName,
           },
-          createElement('span', { 'data-model-label': true }, view.model.label),
+          createElement(
+            'span',
+            {
+              'data-model-label': true,
+              ...(view.model.selected ? { 'data-locale-exempt': true } : {}),
+            },
+            view.model.label,
+          ),
           createElement(
             'svg',
             {

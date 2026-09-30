@@ -34,6 +34,12 @@ import {
   findApproval,
   type LiveProjection,
 } from './live-projection.js'
+import {
+  bindWebLocaleSelector,
+  initializeWebLocale,
+  WEB_LOCALE_CHANGED_EVENT,
+  type WebLocale,
+} from './locale.js'
 import type { ModelPickerOption } from './model-picker.js'
 import { renderWorkspaceOptions } from './navigation.js'
 import { type PermissionMode, permissionLabel, yoloEnabled } from './permission-picker.js'
@@ -76,6 +82,7 @@ import {
 import { requestWorkspacePicker, workspacePickerAvailable } from './workspace-picker.js'
 
 installBrowserLogCapture()
+initializeWebLocale()
 
 function element<K extends keyof HTMLElementTagNameMap>(id: string, tag: K): HTMLElementTagNameMap[K] {
   const found = document.getElementById(id)
@@ -313,6 +320,20 @@ const clientModules = await startClientModules({
   },
   rosterSource,
 })
+const disposeLocaleSelector = bindWebLocaleSelector((locale) => clientModules.locale.setLocale(locale))
+const onLocaleChanged = (event: Event): void => {
+  const locale = (event as CustomEvent<{ locale?: unknown }>).detail?.locale
+  if (locale === 'en' || locale === 'zh-CN') clientModules.locale.setLocale(locale as WebLocale)
+}
+window.addEventListener(WEB_LOCALE_CHANGED_EVENT, onLocaleChanged)
+addEventListener(
+  'pagehide',
+  () => {
+    disposeLocaleSelector()
+    window.removeEventListener(WEB_LOCALE_CHANGED_EVENT, onLocaleChanged)
+  },
+  { once: true },
+)
 const tracePanel = clientModules.trace as NonNullable<typeof clientModules.trace>
 if (!tracePanel) throw new Error('missing trace region')
 const settingsRegion = clientModules.settings as NonNullable<typeof clientModules.settings>

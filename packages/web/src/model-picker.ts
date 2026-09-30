@@ -74,8 +74,12 @@ function modelOption(
       'data-active': index === activeIndex,
       onClick: () => onSelect(index),
     },
-    createElement('span', { className: 'model-picker-model' }, option.id),
-    createElement('span', { className: 'model-picker-route' }, option.label ?? '已配置账户'),
+    createElement('span', { className: 'model-picker-model', 'data-locale-exempt': true }, option.id),
+    createElement(
+      'span',
+      { className: 'model-picker-route', ...(option.label ? { 'data-locale-exempt': true } : {}) },
+      option.label ?? '已配置账户',
+    ),
   )
 }
 
