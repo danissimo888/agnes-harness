@@ -8,17 +8,18 @@ import type {
 // 走诊断相关的子路径，而不是 @agnes/web-units 的包根 barrel：barrel 会连带导出整个 UI 组件树
 // (含 XMarkdown 的 CJS 构建)，而它的 CJS 里有 require('./DebugPanel.css')，在没有 CSS 加载器的
 // 环境里会直接抛语法错误。本模块只做收集、脱敏和打包，不需要 React。
-import {
-  type BrowserLog,
-  type DiagnosticsArtifact,
-  type DiagnosticsBundle,
-  type DiagnosticsInclude,
-  type DiagnosticsWarning,
-  type LogTail,
+import type {
+  BrowserLog,
+  DiagnosticsArtifact,
+  DiagnosticsBundle,
+  DiagnosticsInclude,
+  DiagnosticsWarning,
+  LogTail,
 } from '@agnes/web-units/diagnostics-types'
 import { renderDiagnosticsViewer } from '@agnes/web-units/diagnostics-viewer'
 import { buildZip, type ZipEntry } from '@agnes/web-units/diagnostics-zip'
 import { redactDiagnostic, redactDiagnosticText } from './diagnostics-redact.js'
+import { getWebLocale } from './locale.js'
 
 export type RpcCall = (method: string, params: unknown, opts?: { signal?: AbortSignal }) => Promise<unknown>
 export type CollectInput = {
@@ -298,12 +299,12 @@ export async function collectDiagnostics(
   if (bundle.logs) add('logs/browser.json', json(bundle.logs.browser))
   if (ledger) add('events.jsonl', lines.length ? `${lines.join('\n')}\n` : '')
 
-  let index = encoder.encode(renderDiagnosticsViewer(bundle))
+  let index = encoder.encode(renderDiagnosticsViewer(bundle, getWebLocale()))
   if (size + index.byteLength > limits.zipBytes) {
     // The heavy trace/logs sections live in their own files; the viewer falls back to a slim summary.
     bundle.warnings.push({ source: 'index.html', reason: 'limit' })
     const { trace: _trace, logs: _logs, ...slim } = bundle
-    index = encoder.encode(renderDiagnosticsViewer(slim))
+    index = encoder.encode(renderDiagnosticsViewer(slim, getWebLocale()))
   }
   entries.unshift({ path: 'index.html', data: index })
   // ponytail: the warnings file is exempt from zipBytes (bounded: a dozen sources x 500-char detail),

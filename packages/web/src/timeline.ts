@@ -239,6 +239,7 @@ function createEntry(node: UINode): Entry {
     })
     const body = document.createElement('div')
     body.className = 'node-body markdown'
+    body.toggleAttribute('data-locale-ui', node.lostChars !== undefined && !node.text)
     element.append(body)
     const bodyRenderer = createMarkdownRenderer(body, assistantText(node), {
       streaming: node.streaming === true,
@@ -261,6 +262,7 @@ function createEntry(node: UINode): Entry {
       update(next) {
         if (next.kind !== 'assistant') return
         element.dataset.streaming = String(next.streaming === true)
+        body.toggleAttribute('data-locale-ui', next.lostChars !== undefined && !next.text)
         updateText(title, 'Agnes')
         thinking.hidden = !next.thinking?.trim()
         const active = thinkingActive(next)
@@ -349,12 +351,14 @@ function createEntry(node: UINode): Entry {
   if (node.kind === 'compaction') {
     const title = heading(element, 'node-label', '上下文整理')
     const body = text(element, 'node-body', compactionSummary(node))
+    body.element.toggleAttribute('data-locale-ui', node.summary === undefined)
     return {
       kind: node.kind,
       element,
       fingerprint: fingerprint(node),
       update(next) {
         if (next.kind !== 'compaction') return
+        body.element.toggleAttribute('data-locale-ui', next.summary === undefined)
         updateText(title, '上下文整理')
         updateText(body, compactionSummary(next))
       },

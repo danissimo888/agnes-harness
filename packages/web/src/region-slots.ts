@@ -642,7 +642,7 @@ export interface RightbarDocument {
 function documentPreviewInput(document: RightbarDocument | undefined): DocumentPreviewInput {
   return {
     kind: document?.kind ?? 'text',
-    title: document?.title ?? '文档预览',
+    ...(document?.title === undefined ? {} : { title: document.title }),
     content: document?.content ?? '',
     ...(document?.resourceUrl === undefined ? {} : { resourceUrl: document.resourceUrl }),
   }
@@ -666,6 +666,7 @@ function DocumentPreviewBuiltin({
     request: NonNullable<typeof request>
     resources: ClientResourceService
     input: DocumentPreviewInput
+    notice?: boolean
   }>()
   useLayoutEffect(() => {
     setLoaded(undefined)
@@ -700,6 +701,7 @@ function DocumentPreviewBuiltin({
             content:
               error instanceof ClientResourceReclaimedError ? '截图已按保留策略清理' : '文档资源暂不可用',
           },
+          notice: true,
         })
       })
     return () => {
@@ -718,7 +720,9 @@ function DocumentPreviewBuiltin({
       className: 'rightbar-document-preview',
       'data-rightbar-document-preview': document?.id ?? 'empty',
     },
-    createElement(DocumentPreview, input),
+    loaded && loaded.request === request && loaded.resources === resources && loaded.notice
+      ? createElement('p', { 'data-locale-ui': true }, loaded.input.content)
+      : createElement(DocumentPreview, input),
   )
 }
 
@@ -752,7 +756,7 @@ function RightbarGuideTab(): ReturnType<typeof createElement> {
     createElement(SlotOutlet, {
       name: 'sidebar.right.tab.guide',
       owner: { tabId: 'guide' },
-      fallback: '暂无指南',
+      fallback: createElement('span', { 'data-locale-ui': true }, '暂无指南'),
     }),
     createElement(SlotOutlet, {
       name: 'sidebar.right.tab.guide.entry',
@@ -813,7 +817,15 @@ function RightbarSessionBuiltin({
         name: 'sidebar.right.pane.tab.title',
         entryKey: activeTab,
         props: { owner: owner(activeTab) },
-        fallback: owner(activeTab).title,
+        fallback: createElement(
+          'span',
+          {
+            'data-locale-ui': activeTab === 'guide' || document?.title === undefined ? true : undefined,
+            'data-locale-exempt':
+              activeTab === 'document' && document?.title !== undefined ? true : undefined,
+          },
+          owner(activeTab).title,
+        ),
         hideWhenEmpty: true,
       }),
       createElement(SlotOutlet, {

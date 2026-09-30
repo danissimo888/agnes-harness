@@ -240,14 +240,18 @@ export function ConversationTurnActions({
   }
 
   const facts = [
-    turn.inherited ? '继承历史' : undefined,
-    turn.endedAt
-      ? new Intl.DateTimeFormat('zh-CN', { hour: '2-digit', minute: '2-digit' }).format(
-          new Date(turn.endedAt),
-        )
-      : undefined,
-    latestModel(turn),
-  ].filter(Boolean)
+    { key: 'inherited', value: turn.inherited ? '继承历史' : undefined, literal: false },
+    {
+      key: 'time',
+      value: turn.endedAt
+        ? new Intl.DateTimeFormat('zh-CN', { hour: '2-digit', minute: '2-digit' }).format(
+            new Date(turn.endedAt),
+          )
+        : undefined,
+      literal: true,
+    },
+    { key: 'model', value: latestModel(turn), literal: true },
+  ].filter((fact) => fact.value !== undefined)
   const { totals, cost, credits, billingComplete } = turn.usage
   const duration = durationLabel(turn.durationMs)
   const rows: Array<[string, string]> = [
@@ -312,7 +316,14 @@ export function ConversationTurnActions({
         }}
       >
         <summary ref={summary} className="turn-meta" aria-label="查看本轮用量与调用明细">
-          {settled ? facts.join(' · ') : ''}
+          {settled
+            ? facts.map((value, index) => (
+                <Fragment key={value.key}>
+                  {index > 0 ? ' · ' : ''}
+                  <span data-locale-exempt={value.literal || undefined}>{value.value}</span>
+                </Fragment>
+              ))
+            : ''}
         </summary>
         <dl ref={usage} className="turn-usage-grid">
           {settled &&

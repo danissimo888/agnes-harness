@@ -37,6 +37,7 @@ import {
 import {
   bindWebLocaleSelector,
   initializeWebLocale,
+  translateWebText,
   WEB_LOCALE_CHANGED_EVENT,
   type WebLocale,
 } from './locale.js'
@@ -244,7 +245,9 @@ const clientModules = await startClientModules({
   },
   authorizeCommand: ({ owner, command }) =>
     window.confirm(
-      `是否允许插件 ${owner} 执行命令“${command.title ?? command.id}”${command.effectService ? `（服务：${command.effectService}）` : ''}？`,
+      translateWebText(
+        `是否允许插件 ${owner} 执行命令“${command.title ?? command.id}”${command.effectService ? `（服务：${command.effectService}）` : ''}？`,
+      ),
     ),
   panelContainer: document.getElementById('main-content') ?? undefined,
   sidebarContainer: document.querySelector<HTMLElement>('aside.sidebar') ?? undefined,
@@ -418,8 +421,12 @@ const titleRefresh = createTitleRefresh(async (id) => {
 })
 function updateTitle(id: string, title: string): void {
   sessionLabels.set(id, title)
-  if (current?.id === id) topbarRuntime.setTaskTitle(title)
+  if (current?.id === id) setTaskHeading(title)
   updateSidebar()
+}
+function setTaskHeading(title: string, literal = true): void {
+  document.getElementById('task-title')?.toggleAttribute('data-locale-exempt', literal)
+  topbarRuntime.setTaskTitle(title)
 }
 let sessionRows: PageSessionMeta['items'] = []
 let workspaceRows: WorkspaceEntry[] = []
@@ -657,6 +664,7 @@ function renderControls(): void {
       disabled: !available || sending || sessionPending,
       label: selectedWorkspace?.name ?? (current ? '当前工作区' : '选择工作区'),
       title: selectedWorkspace?.path ?? (current ? '当前会话工作区' : '选择工作区'),
+      literal: selectedWorkspace !== undefined,
     },
   }
   composerRuntime.render(composerView)
@@ -732,13 +740,11 @@ function render(): void {
   }
   const firstInput = windowAtStart ? view.nodes.find((node) => node.kind === 'user') : undefined
   const selectedId = current?.id
-  const title = sessionTitle(
-    selectedId
-      ? (sessionTitles.get(selectedId) ?? sessionRows.find((row) => row.sessionId === selectedId)?.title)
-      : undefined,
-    firstInput ? nodeText(firstInput) : undefined,
-  )
-  topbarRuntime.setTaskTitle(title)
+  const savedTitle = selectedId
+    ? (sessionTitles.get(selectedId) ?? sessionRows.find((row) => row.sessionId === selectedId)?.title)
+    : undefined
+  const title = sessionTitle(savedTitle, firstInput ? nodeText(firstInput) : undefined)
+  setTaskHeading(title, Boolean(savedTitle?.trim() || (firstInput && nodeText(firstInput).trim())))
   if (firstInput && current) {
     updateTitle(current.id, title)
   }
@@ -854,6 +860,7 @@ function renderApproval(): void {
     key,
     title: '需要你的确认',
     summary,
+    literalSummary: typeof liveTitle === 'string' || durable?.summary !== undefined,
     impact,
     ...(serializedInput === undefined ? {} : { preview: serializedInput.slice(0, 2048) }),
     actions,
@@ -925,7 +932,7 @@ async function list(cursor?: string): Promise<PageSessionMeta> {
   updateSidebar()
   const selectedRow = sessionRows.find((row) => row.sessionId === current?.id)
   if (selectedRow?.title || (selectedRow && !projection?.nodes.some((node) => node.kind === 'user')))
-    topbarRuntime.setTaskTitle(selectedRow.title ?? '新任务')
+    setTaskHeading(selectedRow.title ?? '新任务', selectedRow.title !== undefined)
   return page
 }
 async function open(
@@ -1275,7 +1282,7 @@ async function beginNewDraft(showWorkspacePicker = true): Promise<void> {
   const url = new URL(location.href)
   url.searchParams.delete('session')
   history.replaceState(null, '', `${url.pathname}${url.search}`)
-  topbarRuntime.setTaskTitle('新会话')
+  setTaskHeading('新会话', false)
   render()
   if (!selectedWorkspace?.available && showWorkspacePicker) openNewSessionDialog()
   else composerRuntime.focus()

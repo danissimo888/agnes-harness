@@ -18,6 +18,7 @@ export interface ApprovalAction {
 export interface ApprovalView {
   key: string
   summary: string
+  literalSummary?: boolean
   title: string
   impact: string
   preview?: string
@@ -82,10 +83,12 @@ export const Approval = forwardRef<ApprovalHandle, ApprovalProps>(function Appro
           'div',
           { key: view.key, 'data-approval-key': view.key },
           createElement('h2', null, view.title),
-          createElement('p', null, view.summary),
+          createElement('p', { 'data-locale-exempt': view.literalSummary || undefined }, view.summary),
           createElement('p', { className: 'approval-impact' }, view.impact),
           detail,
-          ...(view.preview === undefined ? [] : [createElement('pre', { key: 'preview' }, view.preview)]),
+          ...(view.preview === undefined
+            ? []
+            : [createElement('pre', { key: 'preview', 'data-locale-exempt': true }, view.preview)]),
           createElement(
             'div',
             { className: 'approval-actions' },

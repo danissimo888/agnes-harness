@@ -65,15 +65,42 @@ export function DocumentPreview({
       ) : undefined
       break
     case 'image':
-      children = url ? <img src={url} alt={title ?? '文档图片'} decoding="async" /> : undefined
+      children = url ? (
+        <img
+          src={url}
+          alt={title ?? '文档图片'}
+          data-locale-ui={title ? undefined : true}
+          data-locale-exempt={title ? true : undefined}
+          decoding="async"
+        />
+      ) : undefined
       break
     case 'pdf':
-      children = url ? <iframe src={url} title={title ?? 'PDF 文档'} sandbox="" /> : undefined
+      children = url ? (
+        <iframe
+          src={url}
+          title={title ?? 'PDF 文档'}
+          data-locale-ui={title ? undefined : true}
+          data-locale-exempt={title ? true : undefined}
+          sandbox=""
+        />
+      ) : undefined
       break
   }
   return (
-    <section data-document-preview={kind} aria-label={title || undefined} data-preview-error={unavailable}>
-      {unavailable ? <p className="document-preview-unavailable">{unavailable}</p> : children}
+    <section
+      data-document-preview={kind}
+      aria-label={title ?? '文档预览'}
+      data-locale-preserve-attributes={title ? 'aria-label' : undefined}
+      data-preview-error={unavailable}
+    >
+      {unavailable ? (
+        <p className="document-preview-unavailable" data-locale-ui>
+          {unavailable}
+        </p>
+      ) : (
+        children
+      )}
     </section>
   )
 }

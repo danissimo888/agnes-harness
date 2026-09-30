@@ -1,3 +1,4 @@
+import { initializeWebLocale } from '../../locale.js'
 import { mountPluginAdmin } from './admin.js'
 
 /**
@@ -7,4 +8,5 @@ import { mountPluginAdmin } from './admin.js'
  * needs only the "back to workbench" link; it does not receive or persist a browser credential.
  */
 document.getElementById('return-workbench')?.addEventListener('click', () => location.assign('/'))
+initializeWebLocale()
 mountPluginAdmin()

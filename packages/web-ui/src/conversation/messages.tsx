@@ -107,7 +107,11 @@ function AssistantMessage({
           </div>
         </details>
       )}
-      <div key="body" className="node-body markdown">
+      <div
+        key="body"
+        className="node-body markdown"
+        data-locale-ui={node.lostChars !== undefined && !node.text ? true : undefined}
+      >
         {renderMarkdown ? renderMarkdown(body, 'body', state) : body}
       </div>
     </>
@@ -135,15 +139,7 @@ export function ConversationToolCard({
   const remainder = summary.startsWith(node.name) ? summary.slice(node.name.length).trim() : summary
   const meaningful =
     summary && summary !== node.name && remainder && !remainder.startsWith('{') && !remainder.startsWith('[')
-  const nextDetail = [
-    `工具：${node.name}`,
-    `状态：${toolLabels[node.status]}`,
-    ...(node.argsPreview ? ['', '执行参数', node.argsPreview] : []),
-    ...(node.resultPreview
-      ? ['', node.status === 'failed' ? '错误详情' : '执行结果', node.resultPreview]
-      : []),
-  ].join('\n')
-  const detail = useInteractionSnapshot(detailHost, nextDetail)
+  const detail = useInteractionSnapshot(detailHost, node)
   return (
     <div
       ref={cardHost}
@@ -176,7 +172,27 @@ export function ConversationToolCard({
       <div className="tool-detail-body">
         <div className="tool-detail-inner">
           <div ref={detailHost} className="tool-detail-text">
-            {detail}
+            <span>工具：</span>
+            <span data-locale-exempt>{detail.name}</span>
+            {'\n'}
+            <span>状态：</span>
+            <span>{toolLabels[detail.status]}</span>
+            {detail.argsPreview && (
+              <>
+                {'\n\n'}
+                <span>执行参数</span>
+                {'\n'}
+                <span data-locale-exempt>{detail.argsPreview}</span>
+              </>
+            )}
+            {detail.resultPreview && (
+              <>
+                {'\n\n'}
+                <span>{detail.status === 'failed' ? '错误详情' : '执行结果'}</span>
+                {'\n'}
+                <span data-locale-exempt>{detail.resultPreview}</span>
+              </>
+            )}
           </div>
         </div>
       </div>
@@ -240,7 +256,9 @@ function nativeContent(
       return (
         <>
           <p className="node-label">上下文整理</p>
-          <div className="node-body">{node.summary ?? `已整理上下文（范围：${node.range.join('–')}）`}</div>
+          <div className="node-body" data-locale-ui={node.summary === undefined ? true : undefined}>
+            {node.summary ?? `已整理上下文（范围：${node.range.join('–')}）`}
+          </div>
         </>
       )
     case 'slot':

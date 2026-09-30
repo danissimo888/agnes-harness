@@ -76,7 +76,7 @@ export interface ComposerView {
   send: { disabled: boolean; label: string; mode: 'idle' | 'busy' | 'pending'; title: string }
   stopping: boolean
   usage: UsageView | undefined
-  workspace: { disabled: boolean; label: string; title: string }
+  workspace: { disabled: boolean; label: string; title: string; literal?: boolean }
 }
 
 export interface ComposerHandle {
@@ -277,6 +277,7 @@ export const Composer = forwardRef<ComposerHandle, ComposerProps>(function Compo
           type: 'button',
           'aria-haspopup': 'dialog',
           title: view.workspace.title,
+          'data-locale-preserve-attributes': view.workspace.literal ? 'title' : undefined,
           disabled: view.workspace.disabled,
           onClick: onWorkspace,
         },
@@ -292,7 +293,11 @@ export const Composer = forwardRef<ComposerHandle, ComposerProps>(function Compo
             d: 'M5.37012 2.8418C5.52719 2.84178 5.68146 2.88387 5.81641 2.96289C5.95148 3.04201 6.06232 3.15581 6.13672 3.29199L6.74414 4.40137H12.7383C13.2166 4.40139 13.6084 4.78249 13.6084 5.25391V12.6631C13.6082 13.1343 13.2165 13.5146 12.7383 13.5146H2.7627C2.28458 13.5146 1.89277 13.1343 1.89258 12.6631V3.69434C1.89258 3.22297 2.28447 2.84189 2.7627 2.8418H5.37012ZM2.83496 11.4932V12.5908H12.667V11.5645H12.666V8.00488L2.84961 7.99121L2.83496 11.4932ZM2.83496 7.06738H12.666V5.32617H6.18066L6.16016 5.28809L5.32715 3.76562H2.83496V7.06738Z',
           }),
         ),
-        createElement('span', { 'data-workspace-label': true }, view.workspace.label),
+        createElement(
+          'span',
+          { 'data-workspace-label': true, 'data-locale-exempt': view.workspace.literal || undefined },
+          view.workspace.label,
+        ),
         createElement(
           'svg',
           {

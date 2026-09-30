@@ -134,7 +134,7 @@ export function DiagnosticsDialogView({
       </section>
       <section data-step="saved" hidden={step !== 'saved'}>
         <p className="dialog-intro">把这个 ZIP 包分享给支持或研发人员。解压后打开 index.html 查看。</p>
-        <p className="diagnostics-file" data-saved-name>
+        <p className="diagnostics-file" data-saved-name data-locale-exempt>
           {snapshot.savedName}
         </p>
         <div className="dialog-actions">

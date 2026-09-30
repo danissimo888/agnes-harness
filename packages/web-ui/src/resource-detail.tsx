@@ -16,7 +16,7 @@ function FragmentedFact({ label, value }: { label: string; value: string }): JSX
   return (
     <>
       <dt>{label}</dt>
-      <dd>{value}</dd>
+      <dd data-locale-exempt={['来源', '版本'].includes(label) || undefined}>{value}</dd>
     </>
   )
 }
@@ -49,18 +49,20 @@ function DetailHead({
   kindLabel,
   title,
   subtitle,
+  literalSubtitle,
   onClose,
 }: {
   kindLabel: string
   title: string
   subtitle: string
+  literalSubtitle?: boolean
   onClose(): void
 }): JSX.Element {
   return (
     <div className="admin-detail-head">
       <p className="eyebrow">{kindLabel}</p>
       <div className="plugin-detail-heading">
-        <h2>{title}</h2>
+        <h2 data-locale-exempt>{title}</h2>
         <button
           type="button"
           className="secondary-button compact plugin-detail-close"
@@ -70,7 +72,9 @@ function DetailHead({
           关闭详情
         </button>
       </div>
-      <p className="dialog-intro">{subtitle}</p>
+      <p className="dialog-intro" data-locale-exempt={literalSubtitle || undefined}>
+        {subtitle}
+      </p>
     </div>
   )
 }
@@ -101,6 +105,7 @@ export function SkillDetailContent({
         kindLabel="Skill 资源"
         title={skill.name}
         subtitle={skill.description ?? '该 Skill 未提供说明。'}
+        literalSubtitle={skill.description !== undefined}
         onClose={onClose}
       />
       <div className="admin-detail-scroll">
@@ -121,6 +126,7 @@ export function SkillDetailContent({
               {skill.resolution.shadowed.map((candidate) => (
                 <li
                   key={`${candidate.sourceIdentity.scope}:${candidate.sourceIdentity.rootKey}:${candidate.reason}`}
+                  data-locale-exempt
                 >
                   {`${candidate.sourceIdentity.scope} · ${candidate.sourceIdentity.rootKey} · ${candidate.reason}`}
                 </li>
@@ -268,7 +274,9 @@ export function McpDetailContent({
             <summary>{`工具目录（${catalog.names.length}）`}</summary>
             <div>
               {catalog.names.map((name) => (
-                <p key={name}>{name}</p>
+                <p key={name} data-locale-exempt>
+                  {name}
+                </p>
               ))}
               {catalog.nextCursor && (
                 <button

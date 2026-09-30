@@ -26,7 +26,13 @@ function Fragmented({ label, value }: { label: string; value: string }): JSX.Ele
   return (
     <>
       <dt>{label}</dt>
-      <dd>{value}</dd>
+      <dd
+        data-locale-exempt={
+          ['来源', '溯源来源', '完整性摘要', '版本', '溯源完整性', '许可证'].includes(label) || undefined
+        }
+      >
+        {value}
+      </dd>
     </>
   )
 }

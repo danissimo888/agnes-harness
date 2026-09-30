@@ -100,6 +100,21 @@ describe('escapeBundleJson', () => {
 })
 
 describe('renderDiagnosticsViewer', () => {
+  it('exports English interface labels without translating bundle values', () => {
+    const bundle = makeBundle({ sessionTitle: '已完成', trace: twoLevelTimeline() })
+    document.documentElement.innerHTML = renderDiagnosticsViewer(bundle, 'en')
+    const runtime = Array.from(document.querySelectorAll('script')).find(
+      (s) => s.getAttribute('type') !== 'application/json',
+    )
+    new Function(runtime?.textContent ?? '')()
+    expect(document.documentElement.lang).toBe('en')
+    expect(document.querySelector('h1')?.textContent).toBe('agh diagnostics bundle')
+    expect(document.getElementById('agh-session-title')?.textContent).toBe('已完成')
+    expect(document.getElementById('tab-trace')?.textContent).toContain('Completed')
+    expect(document.getElementById('tab-trace')?.textContent).toContain('Turn 1')
+    const data = document.getElementById('agh-bundle')?.textContent
+    expect(data ? JSON.parse(data) : null).toEqual(bundle)
+  })
   it('renders inert text', () => {
     const bundle = makeBundle({ sessionTitle: '</script><img src=x onerror=alert(1)>' })
     const html = renderDiagnosticsViewer(bundle)

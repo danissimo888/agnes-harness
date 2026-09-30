@@ -50,6 +50,8 @@ Fold turns or tool calls, search the records, or load earlier history as needed.
 
 Settings manages model accounts, plugins, Skills/MCP, appearance, and Computer Use. Available actions depend on backend capabilities and permissions. Installed plugins still require trust and enablement; see [plugin management](packages.md). Reopen history from the sidebar, or use the archive view for archived tasks. Archiving does not delete session history.
 
+Choose **Settings → General → Language** to switch between English and Simplified Chinese. The interface changes immediately, without restarting the server, and the browser remembers the choice for this origin across reloads. If browser storage is unavailable, the choice only lasts for the current page. User messages, model responses, names, identifiers, configuration keys, and paths stay unchanged. Third-party plugin pages, provider sign-in pages, and browser or operating-system dialogs control their own language.
+
 Computer Use shows driver status, system permissions, diagnostics, and maintenance progress. Switching settings pages keeps progress monitoring active. When the pane is replaced or reloaded, it reads the latest operation without resubmitting it. Removing the pane stops local monitoring; use Cancel explicitly to request backend cancellation and wait for confirmation. A connection error or a long wait does not confirm completion or cancellation.
 
 To add MCP, describe the integration in chat and supply a service address or connection details, then inspect it in settings. New services must be trusted and enabled in sequence; see [MCP integration](mcp.md). Use the SecretRef configuration flow for credentials.

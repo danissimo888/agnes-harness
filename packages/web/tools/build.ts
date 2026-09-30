@@ -42,7 +42,7 @@ metafiles.push(
       // 独立页宿主入口：设置弹窗里嵌的是 admin / resources（模块，由 app.ts 动态 import 后手动挂载）；
       // /admin/plugins 与 /admin/resources 两个整页加载这两个入口，由它们自己完成凭据交换与挂载。
       'admin-standalone': join(root, 'src', 'admin', 'plugins', 'standalone.ts'),
-      'resources-standalone': '@agnes/resource-control-web/standalone',
+      'resources-standalone': join(root, 'src', 'admin', 'resources-standalone.ts'),
     },
     outdir: out,
     bundle: true,

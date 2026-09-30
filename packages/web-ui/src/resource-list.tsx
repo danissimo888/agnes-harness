@@ -224,10 +224,14 @@ export function ResourceRow({
       }}
     >
       <div className="plugin-row-content">
-        <h2 title={itemName}>{itemName}</h2>
+        <h2 title={itemName} data-locale-exempt>
+          {itemName}
+        </h2>
         {item.kind === 'skill' ? (
           <>
-            <p>{item.description ?? '该 Skill 未提供说明。'}</p>
+            <p data-locale-exempt={item.description === undefined ? undefined : true}>
+              {item.description ?? '该 Skill 未提供说明。'}
+            </p>
             <p className="plugin-source">
               {`${item.sourceIdentity.rootKey} · 优先级 ${item.priority} · ${item.resolution.winner ? '当前 winner' : '非 winner'}`}
             </p>

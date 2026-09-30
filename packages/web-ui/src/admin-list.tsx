@@ -283,7 +283,7 @@ export function PluginList({
             }}
           >
             <div className="plugin-row-content">
-              <h2>{item.id}</h2>
+              <h2 data-locale-exempt>{item.id}</h2>
               <p>{contributionText(item)}</p>
               <p className="plugin-source">
                 {item.version} · {sourceLabel(item.source as PackageSource)}

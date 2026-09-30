@@ -10,7 +10,7 @@ export function ConversationCost({ node }: { node: CostNode }) {
         {costDetails(node).map(([name, value]) => (
           <Fragment key={name}>
             <dt>{name}</dt>
-            <dd>{value}</dd>
+            <dd data-locale-exempt={name === '模型' ? true : undefined}>{value}</dd>
           </Fragment>
         ))}
       </dl>

@@ -32,6 +32,41 @@ const TABS: ReadonlyArray<readonly [string, string]> = [
   ['artifacts', '产物'],
 ]
 
+const ENGLISH_COPY: Readonly<Record<string, string>> = {
+  概览: 'Overview',
+  对话: 'Conversation',
+  轨迹: 'Trace',
+  日志: 'Logs',
+  系统: 'System',
+  产物: 'Artifacts',
+  应用范围: 'Application scope',
+  'agh 诊断包': 'agh diagnostics bundle',
+  未包含: 'Not included',
+  已包含: 'Included',
+  进行中: 'In progress',
+  等待中: 'Waiting',
+  已完成: 'Completed',
+  失败: 'Failed',
+  已取消: 'Canceled',
+  导入: 'Imported',
+  不可用: 'Unavailable',
+  已截断: 'Truncated',
+  超出上限: 'Limit exceeded',
+  超时: 'Timed out',
+  对话与轨迹: 'Conversation & trace',
+  系统信息: 'System information',
+  ' 毫秒': ' ms',
+  ' 秒': ' s',
+  ' 分 ': ' min ',
+  '错误：': 'Error: ',
+  '第 ': 'Turn ',
+  ' 轮': '',
+  '完整事件账本见 events.jsonl（': 'See the full event ledger in events.jsonl (',
+  ' 条，截至 seq ': ' records, through seq ',
+  '）': ')',
+  '\\n…（已截断）': '\n… (truncated)',
+}
+
 const STYLE = `
 :root { color-scheme: light dark; --agh-bg:#fff; --agh-fg:#1a1a1a; --agh-muted:#666; --agh-border:#ddd; --agh-accent:#2563eb; }
 @media (prefers-color-scheme: dark) {
@@ -218,32 +253,40 @@ const RUNTIME_SCRIPT = `
 `
 
 /** Renders the self-contained offline `index.html` that ships inside the diagnostics ZIP. */
-export function renderDiagnosticsViewer(bundle: DiagnosticsBundle): string {
-  const headerTitle = escapeHtml(bundle.sessionTitle ?? bundle.sessionId ?? '应用范围')
+export function renderDiagnosticsViewer(bundle: DiagnosticsBundle, locale: 'zh-CN' | 'en' = 'zh-CN'): string {
+  const t = (text: string): string => (locale === 'en' ? (ENGLISH_COPY[text] ?? text) : text)
+  const headerTitle = escapeHtml(bundle.sessionTitle ?? bundle.sessionId ?? t('应用范围'))
   const nav = TABS.map(
     ([id, label], index) =>
-      `<button type="button" data-tab="${id}" aria-selected="${index === 0 ? 'true' : 'false'}">${escapeHtml(label)}</button>`,
+      `<button type="button" data-tab="${id}" aria-selected="${index === 0 ? 'true' : 'false'}">${escapeHtml(t(label))}</button>`,
   ).join('')
   const sections = TABS.map(
     ([id], index) => `<section id="tab-${id}"${index === 0 ? '' : ' hidden'}></section>`,
   ).join('')
+  // Only the fixed runtime template is translated. Embedded bundle values remain byte-for-byte data.
+  const runtime =
+    locale === 'en'
+      ? RUNTIME_SCRIPT.replace(/'((?:\\.|[^'\\])*)'/g, (literal, text: string) =>
+          Object.hasOwn(ENGLISH_COPY, text) ? JSON.stringify(ENGLISH_COPY[text]) : literal,
+        )
+      : RUNTIME_SCRIPT
   return `<!doctype html>
-<html lang="zh">
+<html lang="${locale}">
 <head>
 <meta charset="utf-8">
-<title>agh 诊断包</title>
+<title>${t('agh 诊断包')}</title>
 <style>${STYLE}</style>
 </head>
 <body>
 <header>
-<h1>agh 诊断包</h1>
+<h1>${t('agh 诊断包')}</h1>
 <p id="agh-session-title">${headerTitle}</p>
-<p id="agh-meta">版本 ${escapeHtml(bundle.version)} · 导出于 ${escapeHtml(bundle.createdAt)}</p>
+<p id="agh-meta">${locale === 'en' ? 'Version' : '版本'} ${escapeHtml(bundle.version)} · ${locale === 'en' ? 'Exported at' : '导出于'} ${escapeHtml(bundle.createdAt)}</p>
 </header>
 <nav id="agh-tabs">${nav}</nav>
 <main>${sections}</main>
 <script type="application/json" id="agh-bundle">${escapeBundleJson(bundle)}</script>
-<script>${RUNTIME_SCRIPT}</script>
+<script>${runtime}</script>
 </body>
 </html>
 `

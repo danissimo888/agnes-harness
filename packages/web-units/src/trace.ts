@@ -4,6 +4,7 @@ import {
   type ForwardedRef,
   forwardRef,
   type MouseEvent as ReactMouseEvent,
+  type ReactNode,
   type PointerEvent as ReactPointerEvent,
   useEffect,
   useImperativeHandle,
@@ -212,6 +213,33 @@ const nodeSource = (node: UINode): string => {
   if (node.kind === 'approval') return '审批'
   if (node.kind === 'compaction') return '上下文整理'
   return node.kind
+}
+
+/** Keep message text literal while translating generated attachment-count labels. */
+const previewContent = (row: TraceRow, value: string, max?: number): ReactNode => {
+  const images = row.attachments?.filter((item) => item.startsWith('图片 · ')).length ?? 0
+  const resources = row.attachments?.filter((item) => item.startsWith('资源链接 · ')).length ?? 0
+  const labels = [images ? `${images} 张图片` : '', resources ? `${resources} 个资源链接` : ''].filter(
+    Boolean,
+  )
+  const suffix = labels.join(' · ')
+  const hasLabels = suffix && value.endsWith(suffix)
+  const message = hasLabels ? value.slice(0, -suffix.length).replace(/ · $/, '') : value
+  return createElement(
+    'span',
+    null,
+    createElement('span', { 'data-locale-exempt': true }, max === undefined ? message : clip(message, max)),
+    ...(hasLabels
+      ? labels.map((label, index) =>
+          createElement(
+            'span',
+            { key: label, 'data-locale-ui': true },
+            message || index ? ' · ' : '',
+            createElement('span', null, label),
+          ),
+        )
+      : []),
+  )
 }
 
 const LIST_KINDS = new Set(['user', 'context', 'assistant', 'tool', 'approval', 'compaction'])
@@ -1125,12 +1153,19 @@ export const Trace = forwardRef<TraceHandle, TraceProps>(function Trace(
   }, [bars.length, fullTimelineWidth, timelineModel.start, timelineModel.end])
   const activeTimelineRange = timelineDraft ?? timelineRange
   const projectedPosition = (value: number): number => ((value - viewportStart) / viewportWidth) * 100
-  const paneField = (label: string, value: string) =>
+  const paneField = (label: string, value: ReactNode) =>
     createElement(
       'div',
       { className: 'trace-field', key: label },
       createElement('div', { className: 'trace-field-label' }, label),
-      createElement('div', { className: 'trace-field-value' }, value),
+      createElement(
+        'div',
+        {
+          className: 'trace-field-value',
+          'data-locale-value': label === '模型' || label === '错误码' ? 'literal' : undefined,
+        },
+        value,
+      ),
     )
   const inspectorPanes: readonly (readonly [InspectorPane, string])[] = selectedToolKey
     ? [...INSPECTOR_PANES, ['input', '完整输入'], ['output', '完整输出'], ['timing', '时间']]
@@ -1243,7 +1278,21 @@ export const Trace = forwardRef<TraceHandle, TraceProps>(function Trace(
           paneField('来源', selectedRow.source),
           paneField('状态', selectedRow.status),
           ...(selectedRow.errorCode ? [paneField('错误码', selectedRow.errorCode)] : []),
-          ...(selectedRow.attachments?.length ? [paneField('附件', selectedRow.attachments.join('；'))] : []),
+          ...(selectedRow.attachments?.length
+            ? [
+                paneField(
+                  '附件',
+                  selectedRow.attachments.map((attachment, index) =>
+                    createElement(
+                      'span',
+                      { key: index },
+                      index ? '；' : '',
+                      createElement('span', null, attachment),
+                    ),
+                  ),
+                ),
+              ]
+            : []),
           ...(selectedUserNode?.kind === 'user'
             ? selectedUserNode.content.flatMap((block, index) => {
                 if (block.type !== 'image' || !/^image\/(png|jpeg|webp|gif)$/.test(block.mimeType)) return []
@@ -1311,7 +1360,11 @@ export const Trace = forwardRef<TraceHandle, TraceProps>(function Trace(
         createElement(
           'div',
           { className: 'trace-inspector-pane', hidden: pane !== 'preview' },
-          createElement('pre', { className: 'trace-pre' }, selectedRow.preview || '（无预览）'),
+          createElement(
+            'pre',
+            { className: 'trace-pre', 'data-locale-ui': selectedRow.preview ? undefined : true },
+            selectedRow.preview ? previewContent(selectedRow, selectedRow.preview) : '（无预览）',
+          ),
         ),
         createElement(
           'div',
@@ -1319,7 +1372,24 @@ export const Trace = forwardRef<TraceHandle, TraceProps>(function Trace(
           ...(selectedRow.rawNote
             ? [createElement('p', { className: 'trace-raw-note' }, selectedRow.rawNote)]
             : []),
-          createElement('pre', { className: 'trace-pre' }, selectedRow.raw || '（无原始内容）'),
+          createElement(
+            'pre',
+            { className: 'trace-pre', 'data-locale-ui': selectedRow.raw ? undefined : true },
+            selectedRow.raw
+              ? selectedToolNode?.kind === 'tool'
+                ? [
+                    createElement('span', { key: 'label', 'data-locale-ui': true }, '工具：'),
+                    createElement(
+                      'span',
+                      { key: 'payload', 'data-locale-exempt': true },
+                      [selectedToolNode.name, selectedToolNode.argsPreview, selectedToolNode.resultPreview]
+                        .filter(Boolean)
+                        .join('\n\n'),
+                    ),
+                  ]
+                : previewContent(selectedRow, selectedRow.raw)
+              : '（无原始内容）',
+          ),
         ),
         createElement(
           'div',
@@ -1401,6 +1471,7 @@ export const Trace = forwardRef<TraceHandle, TraceProps>(function Trace(
     'div',
     {
       id: 'trace-content',
+      'data-locale-ui': true,
       style: { display: 'contents' },
       'data-agnes-region-owner': 'builtin',
       'data-agnes-region-unit': 'trace',
@@ -1674,7 +1745,16 @@ export const Trace = forwardRef<TraceHandle, TraceProps>(function Trace(
             createElement(
               'span',
               { className: 'trace-row-preview' },
-              `${requestPrefix}${clip(row.preview, 160) || '（无内容）'}${row.status === '已完成' ? '' : ` · ${row.status}`}${row.errorCode ? ` · ${row.errorCode}` : ''}`,
+              requestPrefix ? createElement('span', { 'data-locale-ui': true }, requestPrefix) : null,
+              row.preview
+                ? previewContent(row, row.preview, 160)
+                : createElement('span', { 'data-locale-ui': true }, '（无内容）'),
+              row.status === '已完成'
+                ? null
+                : createElement('span', { 'data-locale-ui': true }, ` · ${row.status}`),
+              row.errorCode
+                ? createElement('span', { 'data-locale-exempt': true }, ` · ${row.errorCode}`)
+                : null,
             ),
           )
           if (!nested) return createElement('div', { key: item.key, className: 'trace-row-entry' }, rowButton)

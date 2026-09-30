@@ -1,3 +1,5 @@
+import { ADDITIONAL_TRANSLATIONS } from './locale-catalog.js'
+import { createUiPatternTranslator } from './locale-patterns.js'
 import { safeThemeStorage } from './theme.js'
 
 export type WebLocale = 'zh-CN' | 'en'
@@ -6,6 +8,7 @@ export const WEB_LOCALE_STORAGE_KEY = 'agnes-web-locale'
 export const WEB_LOCALE_CHANGED_EVENT = 'agnes:locale-changed'
 
 const TRANSLATIONS: Readonly<Record<string, string>> = {
+  ...ADDITIONAL_TRANSLATIONS,
   跳至主要内容: 'Skip to main content',
   跳至插件列表: 'Skip to plugin list',
   跳至资源列表: 'Skip to resource list',
@@ -585,6 +588,7 @@ const PREFIX_TRANSLATIONS: ReadonlyArray<readonly [string, string]> = [
 ]
 
 const LOCALE_VALUES: readonly WebLocale[] = ['zh-CN', 'en']
+const translateUiPattern = createUiPatternTranslator((text) => TRANSLATIONS[text] ?? text)
 
 export function isWebLocale(value: unknown): value is WebLocale {
   return typeof value === 'string' && LOCALE_VALUES.includes(value as WebLocale)
@@ -609,8 +613,18 @@ export function writeWebLocale(storage: Pick<Storage, 'setItem'>, locale: WebLoc
 
 function translateSource(source: string, locale: WebLocale): string {
   if (locale === 'zh-CN') return source
-  const exact = TRANSLATIONS[source]
+  const content = source.trim()
+  const translated = translateContent(content)
+  if (translated === content) return source
+  const start = source.indexOf(content)
+  return source.slice(0, start) + translated + source.slice(start + content.length)
+}
+
+function translateContent(source: string): string {
+  const exact = TRANSLATIONS[source] ?? TRANSLATIONS[source.replace(/\s+/g, ' ')]
   if (exact !== undefined) return exact
+  const patterned = translateUiPattern(source)
+  if (patterned !== undefined) return patterned
   const activeSessions = /^运行时：(\d+) 个活动会话$/.exec(source)
   if (activeSessions)
     return `Runtime: ${activeSessions[1]} active session${activeSessions[1] === '1' ? '' : 's'}`
@@ -626,12 +640,26 @@ function translateSource(source: string, locale: WebLocale): string {
   return source
 }
 
-function excluded(element: Element | null): boolean {
-  return (
-    element?.closest(
-      'script, style, template, textarea, #transcript, #trace-panel, #rightbar-panel, .session, .workspace-heading, .session-title, .workspace-name, .workspace-option-name, .workspace-option-path, .config-account-select, [data-locale-exempt]',
-    ) !== null
+function excluded(element: Element | null, attribute = false): boolean {
+  if (!element) return true
+  if (element.closest('script, style, template, [data-locale-exempt]')) return true
+  if (!attribute && element.closest('textarea')) return true
+  if (
+    attribute &&
+    element.matches(
+      '#transcript, #trace-panel, #rightbar-panel, [data-document-preview], .table-scroll, .timeline-node.tool, .timeline-node.approval',
+    )
   )
+    return false
+  const payload = element.closest(
+    '.session-title, .workspace-name, .workspace-option-name, .workspace-option-path, .config-account-select, .node-body, .thinking-content, .tool-name, .tool-summary, .approval-summary, .markdown, .trace-row-preview, .trace-pre, .trace-field-value[data-locale-value="literal"], [data-document-preview]',
+  )
+  const ui = element.closest(
+    '[data-locale-ui], .code-copy, .node-label, .tool-status, .tool-detail, .tool-detail-text, .thinking > summary, .turn-status, .process-label, .turn-footer, .call-usage, .transcript-earlier',
+  )
+  if (payload && (!ui || !payload.contains(ui))) return true
+  if (ui) return false
+  return element.closest('#transcript, #trace-panel, #rightbar-panel') !== null
 }
 
 const textSources = new WeakMap<Text, string>()
@@ -655,13 +683,18 @@ function translateTextNode(node: Text): void {
 }
 
 function translateElement(element: Element): void {
-  if (excluded(element)) return
-  const attributes = ['aria-label', 'aria-description', 'title', 'placeholder', 'aria-placeholder']
+  if (excluded(element, true)) return
+  const attributes = ['aria-label', 'aria-description', 'title', 'placeholder', 'aria-placeholder', 'alt']
   const sources = attributeSources.get(element) ?? new Map<string, string>()
   const renders = attributeRenders.get(element) ?? new Map<string, string>()
   for (const name of attributes) {
     const current = element.getAttribute(name)
-    if (current === null) continue
+    if (current === null) {
+      sources.delete(name)
+      renders.delete(name)
+      continue
+    }
+    if (element.getAttribute('data-locale-preserve-attributes')?.split(' ').includes(name)) continue
     const last = renders.get(name)
     if (last !== undefined && current !== last) sources.set(name, current)
     const source = sources.get(name) ?? current
@@ -707,6 +740,7 @@ export function initializeWebLocale(
     observer = new MutationObserver((records) => {
       for (const record of records) {
         if (record.type === 'characterData') translateTextNode(record.target as Text)
+        else if (record.type === 'attributes') translateElement(record.target as Element)
         else {
           for (const node of record.addedNodes) {
             if (node.nodeType === Node.ELEMENT_NODE) translateWebDocument(node as Element)
@@ -716,7 +750,13 @@ export function initializeWebLocale(
         }
       }
     })
-    observer.observe(document.body, { childList: true, subtree: true, characterData: true })
+    observer.observe(document.body, {
+      childList: true,
+      subtree: true,
+      characterData: true,
+      attributes: true,
+      attributeFilter: ['aria-label', 'aria-description', 'title', 'placeholder', 'aria-placeholder', 'alt'],
+    })
   }
   window.addEventListener('storage', handleStorage)
   return activeLocale
@@ -733,6 +773,11 @@ export function setWebLocale(locale: WebLocale): void {
 
 export function getWebLocale(): WebLocale {
   return activeLocale
+}
+
+/** Native browser dialogs do not have DOM nodes for the observer to translate. */
+export function translateWebText(source: string): string {
+  return translateSource(source, activeLocale)
 }
 
 export function bindWebLocaleSelector(onChange?: (locale: WebLocale) => void): () => void {
