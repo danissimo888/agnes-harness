@@ -629,7 +629,7 @@ function translateSource(source: string, locale: WebLocale): string {
 function excluded(element: Element | null): boolean {
   return (
     element?.closest(
-      'script, style, template, textarea, #conversation-shell, #trace-panel, #rightbar-panel, .session, .workspace-heading, .session-title, .workspace-name, .workspace-option-name, .workspace-option-path, .config-account-select, [data-locale-exempt]',
+      'script, style, template, textarea, #transcript, #trace-panel, #rightbar-panel, .session, .workspace-heading, .session-title, .workspace-name, .workspace-option-name, .workspace-option-path, .config-account-select, [data-locale-exempt]',
     ) !== null
   )
 }

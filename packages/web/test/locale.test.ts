@@ -31,7 +31,8 @@ beforeEach(() => {
     <body>
       <button id="cancel">取消</button>
       <select id="agnes-locale"><option value="zh-CN">简体中文</option><option value="en">English</option></select>
-      <section id="conversation-shell"><p>取消</p><p>模型回复不应翻译</p></section>
+      <section id="conversation-shell"><div id="transcript"><p>取消</p><p>模型回复不应翻译</p></div></section>
+      <section id="empty-state"><h2>Agnes Harness</h2><p>让每一个模型，都能成为会做事的智能体。</p></section>
       <span class="session-title">设置</span>
     </body>
   `
@@ -56,6 +57,9 @@ describe('web locale persistence', () => {
     setWebLocale('en')
     expect(document.documentElement.lang).toBe('en')
     expect(document.getElementById('cancel')?.textContent).toBe('Cancel')
+    expect(document.querySelector('#empty-state p')?.textContent).toBe(
+      'Turn every model into an agent that gets things done.',
+    )
     expect(storage.value(WEB_LOCALE_STORAGE_KEY)).toBe('en')
 
     setWebLocale('zh-CN')
