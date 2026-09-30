@@ -698,6 +698,7 @@ export function initializeWebLocale(
   storage: Pick<Storage, 'getItem' | 'setItem'> = safeThemeStorage(),
 ): WebLocale {
   observer?.disconnect()
+  window.removeEventListener('storage', handleStorage)
   activeStorage = storage
   activeLocale = readWebLocale(storage)
   document.documentElement.lang = activeLocale
