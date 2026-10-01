@@ -604,4 +604,8 @@ export const ADDITIONAL_TRANSLATIONS: Readonly<Record<string, string>> = {
   '还没有发现 Skill': 'No Skills found yet',
   '把 SKILL.md 放到下列模板路径后刷新。只扫描这些根的直属子目录，不会递归，也不会读取普通 skills/ 文件夹。':
     'Place SKILL.md in one of the template paths below, then refresh. Only direct child directories of these roots are scanned, without recursion or scanning ordinary skills/ folders.',
+  '模型回复达到输出额度，本轮已停止。请要求分步生成，或调整请求输出额度后继续。':
+    'The model response reached the output allowance, so this turn stopped. Ask for output in smaller steps, or adjust the request output allowance before continuing.',
+  '模型服务返回限流错误（HTTP 429）。请稍后重试；若持续出现，请检查该账号的服务额度或联系模型服务方。':
+    "The model service returned a rate-limit error (HTTP 429). Please try again later. If it continues, check this account's service quota or contact the model service provider.",
 }

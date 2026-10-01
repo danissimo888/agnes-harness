@@ -210,5 +210,17 @@ describe('web locale persistence', () => {
     ).toBe(
       'Enable MCP “设置”\nVersion: 取消\n\nConfirmation submits this to the local backend for safety checks against the current version and policy.',
     )
+    expect(
+      translateWebText('模型回复达到输出额度，本轮已停止。请要求分步生成，或调整请求输出额度后继续。'),
+    ).toBe(
+      'The model response reached the output allowance, so this turn stopped. Ask for output in smaller steps, or adjust the request output allowance before continuing.',
+    )
+    expect(
+      translateWebText(
+        '模型服务返回限流错误（HTTP 429）。请稍后重试；若持续出现，请检查该账号的服务额度或联系模型服务方。',
+      ),
+    ).toBe(
+      "The model service returned a rate-limit error (HTTP 429). Please try again later. If it continues, check this account's service quota or contact the model service provider.",
+    )
   })
 })
